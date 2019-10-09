@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <title>Money Button On-Chain Encryption Demo</title>
+  <link href='https://fonts.googleapis.com/css?family=IBM+Plex+Sans:700' rel='stylesheet' />
+
+</head>
+
+<body>
+
+<style type="text/css">
+body {
+  font-family: "IBM Plex Sans", sans-serif;
+  margin: 20px;
+}
+h1 {
+  font-size: 30px;
+}
+h2 {
+  font-size: 25px;
+}
+h3 {
+  font-size: 20px;
+}
+input {
+  border-style: solid;
+  border-radius: 20px;
+  border-color: #4e75ee;
+  border-width: 2px;
+  padding: 10px;
+  font-size: 15px;
+  width: calc(100% - 10px);
+}
+.total {
+  max-width: 600px;
+  margin: 0px auto;
+}
+.output {
+  border-radius: 20px;
+  font-size: 15px;
+  padding: 10px;
+  background-color: #f7cbcf;
+}
+.button {
+  padding: 15px 0px 0px;
+}
+</style>
+
+<div class = 'total'>
+
+    <img src="https://www.moneybutton.com/static/img/blue-logo.svg" width="100">
+    <h2>Money Button On-Chain Encryption Demo</h2>
+
+    <script type="text/javascript" src="https://unpkg.com/bsv@0.30.0/bsv.min.js"></script>
+    <script src="https://www.moneybutton.com/moneybutton.js"></script>
+    <!--<script src="https://www.moneybutton.com/moneybutton.js"></script>-->
+    
+    <h3>Paymail to Encrypt To</h3>
+    <input id="input-paymail" type="text" onblur="encryptBlur()"><br>
+    
+    <h3>Data to Encrypt</h3>
+    <input id="input-plaintext" type="text" onblur="encryptBlur()"><br>
+    
+    <div id="button-encrypt" class="button"></div><br>
+    
+    <h3>Transaction with Encrypted Data</h3>
+    <div id="output-ciphertext" class="output"></div>
+    
+    <h3>Transaction to Decrypt</h3>
+    <input id="input-txid" type="text" onblur="decryptBlur()"><br>
+
+    <div id="button-decrypt" class="button"></div><br>
+
+    <h3>Decrypted Data</h3>
+    <div id="output-plaintext" class="output"></div>
+
+    <script language='javascript'>
+    function encryptBlur () {
+      const div = document.getElementById('button-encrypt')
+      const content = document.getElementById('input-plaintext').value
+      const paymail = document.getElementById('input-paymail').value
+      const outputs = [
+        {
+          amount: '0',
+          currency: 'BSV',
+          script: bsv.Script.buildSafeDataOut(['#{myCiphertext}']).toASM()
+        }
+      ]
+      moneyButton.render(div, {
+        label: 'encrypt',
+        outputs,
+        cryptoOperations: [
+          {
+            name: 'myCiphertext',
+            method: 'encrypt',
+            data: content,
+            dataEncoding: 'utf8',
+            paymail,
+            key: 'identity', // default value
+            algorithm: 'electrum-ecies' // default value
+          }
+        ],
+        onPayment: (payment) => {
+          document.getElementById('output-ciphertext').innerHTML = `
+          ${payment.txid}
+          `
+        }
+      })
+    }
+    
+    async function decryptBlur() {
+      const div = document.getElementById('button-decrypt')
+      const txid = document.getElementById('input-txid').value
+      const res = await fetch(`https://api.whatsonchain.com/v1/bsv/main/tx/hash/${txid}`)
+      const resjson = await res.json()
+      const txhex = resjson.hex
+      const tx = new bsv.Transaction(txhex)
+      let ciphertextbuf
+      for (let idx in tx.outputs) {
+        let output = tx.outputs[idx]
+        if (output.script.isSafeDataOut()) {
+          ciphertextbuf = output.script.getData()[0]
+        }
+      }
+      const ciphertext = ciphertextbuf.toString('hex')
+      console.log('ciphertext', ciphertext)
+      const content = ciphertext
+      const paymail = document.getElementById('input-paymail').value
+      moneyButton.render(div, {
+        label: 'decrypt',
+        cryptoOperations: [
+          {
+            name: 'myCiphertext',
+            method: 'decrypt',
+            data: content,
+            dataEncoding: 'hex',
+            valueEncoding: 'utf8',
+            key: 'identity', // default value
+            algorithm: 'electrum-ecies' // default value
+          }
+        ],
+        onCryptoOperations: (cryptoOperations) => {
+          document.getElementById('output-plaintext').innerHTML = `
+          ${cryptoOperations[0].value}
+          `
+        }
+      })
+    }
+    </script>
+    
+</div>
+
+
+</body>
+
+</html>
