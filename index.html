@@ -144,16 +144,8 @@ hr {
       }
 
       const paymail = document.getElementById('input-paymail').value
-      const outputs = [
-        {
-          to: 'moneybutton@moneybutton.com',
-          amount: '0.05',
-          currency: 'USD'
-        }
-      ]
       moneyButton.render(div, {
         label: 'decrypt',
-        outputs,
         clientIdentifier: '364fff460824628f0eaef0b33d122501',
         cryptoOperations: [
           {
