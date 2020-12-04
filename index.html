@@ -122,7 +122,6 @@ hr {
       const txid = document.getElementById('input-txid').value
       let ciphertext
       if (txid) {
-        //ff9df5412bee7294b5bc9afbcbcf6b1c0b6f89394bf470a9073d7f486dbb04b0
         ciphertext = await (async function () {
           const res = await fetch(`https://api.whatsonchain.com/v1/bsv/main/tx/${txid}/hex`)
           const resText = await res.text()
